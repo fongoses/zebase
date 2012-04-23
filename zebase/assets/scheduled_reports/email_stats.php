@@ -1,11 +1,11 @@
-<?php
-$hostname_local = "";
-$username_local = "";
-$password_local = "";
-$database_local = "";
-$web_url = "";  
-$admin_email = "";
+<?php 
+$hostname_local = $_SESSION["hostname"];
+$username_local = $_SESSION["db_username"];
+$password_local = $_SESSION["db_password"];
+$database_local = $_SESSION["database"];
+$web_url = $_SESSION["base_url"];
 
+$admin_email = ""; 
 	$local = mysql_connect($hostname_local, $username_local, $password_local) or trigger_error(mysql_error(),E_USER_ERROR); 
 	mysql_select_db($database_local, $local);
 	//move the current working directory up to use the main temp folder
@@ -53,7 +53,7 @@ function output_titles($local,$doctype, $column_array){
 	if ($doctype =="l_summary"){
 		list($column_array) = get_defualt_columns($local); 
 	}elseif ($doctype =="q_summary"){		 
-		if ($column_array == "mutant" || $column_array == "strain" || $column_array == "transgene"){
+		if ($column_array == "mutant" || $column_array == "transgene"){
 			$type = $column_array;
 			$column_array = "";
 			$column_array[0]['db_name'] = $type;
@@ -62,9 +62,22 @@ function output_titles($local,$doctype, $column_array){
 			$column_array[3]['db_name'] = "current_adults";
 			$column_array[4]['db_name'] = "total_batches";
 			$column_array[0]['col_title'] = $type;
-			$column_array[1]['col_title'] = "Incoming Adults";
-			$column_array[2]['col_title'] = "Nursery Quantity";
-			$column_array[3]['col_title'] = "Current Adults (Alive,Sick)";
+			$column_array[1]['col_title'] = "Current Adults";
+			$column_array[2]['col_title'] = "Starting Nursery";
+			$column_array[3]['col_title'] = "Current Adults";
+			$column_array[4]['col_title'] = "Total Batches";	
+		}elseif ($column_array == "wildtype"){
+			$type = $column_array;
+			$column_array = "";
+			$column_array[0]['db_name'] = "name";
+			$column_array[1]['db_name'] = "current_adults";
+			$column_array[2]['db_name'] = "starting_nursery";
+			$column_array[3]['db_name'] = "current_adults";
+			$column_array[4]['db_name'] = "total_batches";
+			$column_array[0]['col_title'] = $type;
+			$column_array[1]['col_title'] = "Current Adults";
+			$column_array[2]['col_title'] = "Starting Nursery";
+			$column_array[3]['col_title'] = "Current Adults";
 			$column_array[4]['col_title'] = "Total Batches";	
 		}else{
 			$column_array = "";
@@ -72,9 +85,9 @@ function output_titles($local,$doctype, $column_array){
 			$column_array[1]['db_name'] = "starting_nursery";
 			$column_array[2]['db_name'] = "current_adults";
 			$column_array[3]['db_name'] = "total_batches";		
-			$column_array[0]['col_title'] = "Incoming Adults";
-			$column_array[1]['col_title'] = "Nursery Quantity";
-			$column_array[2]['col_title'] = "Current Adults (Alive,Sick)";
+			$column_array[0]['col_title'] = "Starting Adults";
+			$column_array[1]['col_title'] = "Starting Nursery";
+			$column_array[2]['col_title'] = "Current Adults";
 			$column_array[3]['col_title'] = "Total Batches";	
 		}   	 
 	 }else{	 	
@@ -86,7 +99,7 @@ function output_titles($local,$doctype, $column_array){
 				if ($table_field[1] == "batch_ID"){
 					$column_array[$index]['db_name'] =  'batch_ID';	
 					$column_array[$index]['col_title'] = 'Batch Number';
-				}else{
+				}else{ 
 					$column_array[$index]['db_name'] =  $table_field[1];	
 					$column_array[$index]['col_title'] =$table_field[1];
 				}	
@@ -164,19 +177,10 @@ function get_defualt_columns($local){
 	return array($column_array);
 }
 function output_custom_fields($temp_object, $doctype, $location, $local, $index){	
-	if ($temp_object["starting_nursery"] == "" || $temp_object["starting_nursery"] == "0"){ 
-		$temp_object["starting_nursery"] = '<a href="#" style=" visibility:hidden">$' . 0 . '</a>';				 								 
-	}	
-	if ($temp_object["current_adults"] == "" || $temp_object["current_adults"] == "0"){ 
-		$temp_object["current_adults"] = '<a href="#" style=" visibility:hidden">$' . 0 . '</a>';					 								 
-	}	
-	if ($temp_object["current_adults"] == "" || $temp_object["current_adults"] == "0"){ 
-		$temp_object["current_adults"] = '<a href="#" style=" visibility:hidden">$' . 0 . '</a>';					 								 
-	} 
-	if ($doctype =="l_summary"){			 
+ 	if ($doctype =="l_summary"){			 
 		 	list($column_array) = get_defualt_columns($local); 
 			$html = "";
-			foreach ($column_array as $value){
+			foreach ($column_array as $value){ 
 				$field_name = $value['db_name'];
 				if ($field_name == "batch_ID"){
 					$html .= '<td><a href="fish_db.php?batch_ID=' . $temp_object[$field_name] . 
@@ -201,37 +205,175 @@ function output_custom_fields($temp_object, $doctype, $location, $local, $index)
 				}elseif ($value['db_name'] == "transgene_ID"){
 					$transgene_array = "";
 					list($transgene_array) = get_transgene($local, $temp_object[$field_name]);
-					$html .= '<td>' . $transgene_array['mutant'] . '</td>';
+					$html .= '<td>' . $transgene_array['transgene'] . '</td>';
 				}else{
-					$html .= '<td>' . $temp_object[$field_name] . '</td>';
+					$html .= '<td>' . $temp_object[$field_name] .  '</td>';
 				}
-			}			
+			}
+						
 			
 	}elseif ($doctype =="q_summary"){			 	 
 			$html = "";				
 			if ($index == "mutant"){
-				$html .= '<td>' . $temp_object['mutant'] . '</td>';	
-			}elseif ($index == "strain"){
-				$html .= '<td>' . $temp_object['strain'] . '</td>';	
-			}elseif ($index == "promoter"){
-				$html .= '<td>' . $temp_object['promoter'] . '</td>';	
-			}else{				
+				if ($temp_object['mutant'] == ""){
+					$html .= '<td>-</td>';	
+				}else{
+					$html .= '<td>' . $temp_object['mutant'] . '</td>';	
+				}
+			}elseif ($index == "wildtype"){
+				if ($temp_object['strain'] == ""){
+					$html .= '<td>-</td>';	
+				}else{
+					$html .= '<td>' . $temp_object['strain'] . '</td>';	
+				}
+			}elseif ($index == "transgene"){
+				if ($temp_object['transgene'] == ""){
+					$html .= '<td>-</td>';	
+				}else{
+					$html .= '<td>' . $temp_object['transgene'] . '</td>';
+				} 
 			}
-			$html .= '<td>' . $temp_object['current_adults'] . '</td>';
-			$html .= '<td>' . $temp_object['starting_nursery'] . '</td>';
-			$html .= '<td>' . $temp_object['current_adults'] . '</td>';
-			$html .= '<td>' . $temp_object['total_batches'] . '</td>';		 		
+			if ($temp_object['current_adults'] == ""){
+				$html .= '<td>-</td>';	
+			}else{
+				$html .= '<td>' . $temp_object['current_adults'] . '</td>';
+			}
+			if ($temp_object['starting_nursery'] == ""){
+				$html .= '<td>-</td>';	
+			}else{
+				$html .= '<td>' . $temp_object['starting_nursery'] . '</td>';
+			}
+			if ($temp_object['current_adults'] == ""){
+				$html .= '<td>-</td>';	
+			}else{
+				$html .= '<td>' . $temp_object['current_adults'] .  '</td>';
+	 		}
+			if ($temp_object['total_batches'] == ""){
+				$html .= '<td>-</td>';	
+			}else{
+				$html .= '<td>' . $temp_object['total_batches'] . '</td>';	
+			}
 			return $html;		
 	} 	 
-}	
-function output_qsummary_rows($local,$listby,$type){
-	$ID = 'qsummary_' . $type;
+}
+function getLastDayOfMonth($month, $year){
+return idate('d', mktime(0, 0, 0, ($month + 1), 0, $year));
+}
+function get_date_taken($local,$s,$e){
+	$sql = "select distinct date_taken from stat_survival_track where date_taken >= '" . $s . "' and date_taken <= '" . $e . "' order by date_taken  asc";	
+  	$result = mysql_query($sql, $local) or die(mysql_error()); 	
+	$temp = mysql_fetch_row($result);
+	return $temp;
+}
+function return_rate_dif($local,$batch_ID){
+	$curmonth = date('m',time());
+ 	$year = date('Y',time()); 
+	$last_day_of_current_month = getLastDayOfMonth($curmonth, $year);
+	$current_month_s = mktime(0,0,1,date('m',time()),1,$year);
+	$current_month_e = mktime(23,59,59,date('m',time()),$last_day_of_current_month,$year); 
+	$date_taken = get_date_taken($local,$current_month_s,$current_month_e);
+	$sql = "select * from stat_survival_track where date_taken like '" . $date_taken[0] . "' and batch_ID like '" . $batch_ID . "'";	
+ 	//echo $sql . ' cur <br><br>';
+	$result = mysql_query($sql, $local) or die(mysql_error()); 	 
+	$temp = mysql_fetch_array($result);
+ 	return $temp;	
+}
+function output_monthly_death_rate($local,$listby){
+	$curmonth = date('m',time());
+	if ($curmonth == 1){
+		$lastmonth = 12;
+		$year = date('Y',time()) -1; 
+		$last_day_of_last_month = getLastDayOfMonth($lastmonth, $year);
+		$last_month_s = mktime(0,0,1,$lastmonth,1,$year);
+		$last_month_e = mktime(23,59,59,$lastmonth,$last_day_of_last_month,$year);
+	}else{
+		$year = date('Y',time()); 
+		$lastmonth = $curmonth -1;
+		$last_day_of_last_month = getLastDayOfMonth($lastmonth, $year);
+		$last_month_s = mktime(0,0,1,$lastmonth,1,$year);
+		$last_month_e = mktime(23,59,59,$lastmonth,$last_day_of_last_month,$year);
+	} 
+	$date_taken = get_date_taken($local,$last_month_s,$last_month_e);
+	$lab = str_replace("_lab","",$listby);		
+	if(strstr($listby,'_lab')){
+		$criteria = " lab like '" . $lab . "' ";
+	}else{
+		$criteria = "users.user_ID like '" . $listby . "'";
+	}
+	 
+	$sql = "select name as name,stat_survival_track.current_adults, stat_survival_track.batch_ID, stat_survival_track.date_taken 
+	from stat_survival_track join fish on 
+	(fish.batch_ID = stat_survival_track.batch_ID) join users on 
+	(users.user_ID = fish.user_ID) where date_taken like '" . $date_taken[0] . "' and " . $criteria;	
+	//echo $sql . '<br><br>';
+	$result = mysql_query($sql, $local) or die(mysql_error()); 	
+	$index = 0; 
+	$total_deaths = 0;
+	while($last_month_rate =  mysql_fetch_assoc($result)){	 
+		$cur_rate = "";  
+		$cur_rate = return_rate_dif($local,$last_month_rate['batch_ID']);  
+		if (is_array($cur_rate)){
+			$rate = $last_month_rate['current_adults'] - $cur_rate['current_adults'];
+		 
+			if ($rate < 0){ 
+				$all_array[$index]['died_in_batch'] = 0;	
+			}else{
+				
+				$total_deaths += $rate;
+				if($rate > 0){
+					$all_array[$index]['died_in_batch'] = $rate;
+					$all_array[$index]['current'] = $cur_rate['current_adults'];	
+					$all_array[$index]['last'] = $last_month_rate['current_adults'];
+					$all_array[$index]['batch_ID'] = $last_month_rate['batch_ID'];
+					$all_array[$index]['last_date'] = $last_month_rate['date_taken'];
+					$all_array[$index]['name'] = $last_month_rate['name'];
+					$index++;	
+					/*echo $last_month_rate['batch_ID'] . '<br>';	
+					echo 	$rate . ' - ' . $total_deaths . '<br>'; 
+					echo $last_month_rate['current_adults'] . ' ' . $cur_rate['current_adults'] . '<br><br>';*/
+				}
+			} 	
+		}  
+		
+	}  
+	$html = '<strong>Total deaths this month:</strong> ' . $total_deaths;
+	if (is_array($all_array)){
+		$html .= '<table>';
+		$html .= '<tr style="font-size:13px" onMouseOver="this.bgColor = \'#FFFFFF\'" onMouseOut ="this.bgColor = \'#CCCCCC\'" bgcolor="#CCCCCC">
+		<th>Batch Number</th><th>Name</th><th>' . date('F',time()) . ' Mortality</th><th>Last Month' .  ' (' . date('m/d/Y',$all_array[0]['last_date']) . ')</th><th>Current Month' .  ' (' . date('m/d/Y',time()) . ')</th></tr>';
+		foreach ($all_array as $object){ 
+			$backgroundindex = checkbackground($backgroundindex);
+			if ($backgroundindex == "1") {
+				$html .= '<tr style="font-size:13px" onMouseOver="this.bgColor = \'#FFFFFF\'" onMouseOut ="this.bgColor = \'#CCCCCC\'" bgcolor="#CCCCCC">';  
+			} else {
+				$html .= '<tr style="font-size:13px" onMouseOver="this.bgColor = \'#FFFFFF\'" onMouseOut ="this.bgColor = \'#EBEBEB\'" bgcolor="#EBEBEB">';
+			}				 
+			$html .= '<td>' . $object['batch_ID'] . '</td>';
+			$html .= '<td>' . $object['name'] . '</td>';
+			$html .= '<td>' . $object['died_in_batch'] . '</td>';
+			$html .= '<td>' . $object['last'] . '</td>'; 
+			$html .= '<td>' . $object['current'] . '</td>'; 
+			$html .= '</tr>';
+			$backgroundindex++; 
+		}
+		$html .= '</table>';
+	}
+	return $html;  
+}
+function output_qsummary_rows($local,$listby,$type,$name){ 
+  	$ID = 'qsummary_' . $type;
 	sort_tables($ID);
-	$html = "<br>";
+	$html = "<br>"; 
 		if ($type == "user"){
-			$html .=	'<strong>' . $listby . ' Quantity Summary</strong><br>';
+			$html .=	'<strong>' . $name . ' Over-all Summary</strong><br>';
+		}elseif ($type == "wildtype"){
+			$html .=	'<strong>' . $name . ' Wild Type Monthly Summary</strong><br>';
+		}elseif ($type == "mutant"){
+			$html .=	'<strong>' . $name . ' Mutant Monthly Summary</strong><br>';
+		}elseif ($type == "transgene"){
+			$html .=	'<strong>' . $name . ' Transgene Monthly Summary</strong><br>';
 		}else{
-			$html .=	'<strong>' . $type . ' Quantity Summary</strong><br>';
+			$html .=	'<strong>' . $name . '  Monthly Summary</strong><br>';
 		}	 
 		$html .= '<div style=""><table id="qsummary_' . $type . '" class="tablesorter"><thead> ';
 		$html .= '<tr style="font-size:13px" onMouseOver="this.bgColor = \'#FFFFFF\'" onMouseOut ="this.bgColor = \'#CCCCCC\'" bgcolor="#CCCCCC">';	 
@@ -239,23 +381,32 @@ function output_qsummary_rows($local,$listby,$type){
 		if(strstr($listby,'_lab')){
 			$criteria = " lab like '" . $lab . "' ";
 		}else{
-			$criteria = "users.last_name like '" . $listby . "'";
+			$criteria = "users.user_ID like '" . $listby . "'";
 		}
+		
 		if($type == "user"){		 			
-			$sql = "select count(batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users where fish.user_ID = users.user_ID and " . $criteria;			 
-		}elseif ($type == "mutant"){			 
-			$sql = "select distinct fish.mutant_ID,mutant.*, count(batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,mutant where mutant.mutant_ID = fish.mutant_ID and fish.user_ID = users.user_ID and " . $criteria . " group by fish.mutant_ID";
-		}elseif ($type == "strain"){
-			$sql = "select distinct fish.strain_ID,strain.*, count(batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,strain where strain.strain_ID = fish.strain_ID and fish.user_ID = users.user_ID and " . $criteria . " group by fish.strain_ID";
+			$sql = "select count(batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,labs where labs.lab_ID = users.lab and fish.user_ID = users.user_ID and " . $criteria;			 
+		}elseif ($type == "mutant"){
+			if(strstr($listby,'_lab')){		 
+				$sql = "select distinct mutant.mutant_ID,mutant.*, count(fish.batch_ID) as total_batches, sum(starting_adults) as starting_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,mutant,mutant_assoc,labs where mutant_assoc.batch_ID = fish.batch_ID  and mutant.mutant_ID = mutant_assoc.mutant_ID and fish.user_ID = users.user_ID and  status like 'Alive' and" . $criteria . " group by mutant_assoc.mutant_ID";
+			}else{
+				$sql = "select distinct mutant.mutant_ID,mutant.*, count(fish.batch_ID) as total_batches, sum(starting_adults) as starting_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,mutant,mutant_assoc where mutant_assoc.batch_ID = fish.batch_ID  and mutant.mutant_ID = mutant_assoc.mutant_ID and fish.user_ID = users.user_ID and  status like 'Alive' and " . $criteria . " group by mutant_assoc.mutant_ID";
+ 		}
+		}elseif ($type == "wildtype"){
+			if(strstr($listby,'_lab')){	
+				$sql = "select distinct fish.strain_ID,strain.*, count(batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,strain,labs where labs.lab_ID = users.lab and strain.strain_ID = fish.strain_ID and fish.user_ID = users.user_ID and status like 'Alive' and " . $criteria . " group by fish.strain_ID";
+			}else{
+				$sql = "select fish.strain_ID,strain.*,count(batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish,strain,users where fish.user_ID = users.user_ID and strain.strain_ID = fish.strain_ID and batch_ID not in (select batch_ID from mutant_assoc) and batch_ID not in (select batch_ID from transgene_assoc) and status like 'Alive' and " . $criteria . " group by fish.strain_ID";
+	 	 	}
 		}elseif ($type == "transgene"){
-			$sql = "select distinct fish.transgene_ID,transgene.*, count(batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,transgene where transgene.transgene_ID = fish.transgene_ID and fish.user_ID = users.user_ID and " . $criteria . " group by fish.transgene_ID";
-		}		 
+			$sql = "select distinct transgene_assoc.transgene_ID,transgene.*, count(fish.batch_ID) as total_batches, sum(current_adults) as current_adults,sum(current_adults) as current_adults,sum(starting_nursery) as starting_nursery from fish, users,transgene,transgene_assoc,labs where transgene_assoc.batch_ID = fish.batch_ID and labs.lab_ID = users.lab and transgene.transgene_ID = transgene_assoc.transgene_ID and fish.user_ID = users.user_ID and status like 'Alive' and " . $criteria . " group by transgene_assoc.transgene_ID";
+		}  
 		$Recordset = mysql_query($sql, $local) or die(mysql_error()); 	 
 		while($object =  mysql_fetch_assoc($Recordset)){
 			$all_array[] = $object;						  
 		}			
-		if (is_array($all_array)){	
-			$html .= output_titles($local,$_GET['type'], $type);
+		if (is_array($all_array)){	 
+			$html .= output_titles($local,$_GET['type'], $type); 
 			$html .= '</tr></thead><tbody> ';
 	 		if ($_POST['column_sort'] != ""){
 				if ($_POST['sort_order'] == "desc"){
@@ -274,10 +425,10 @@ function output_qsummary_rows($local,$listby,$type){
 				} else {
 					$html .= '<tr style="font-size:13px" onMouseOver="this.bgColor = \'#FFFFFF\'" onMouseOut ="this.bgColor = \'#EBEBEB\'" bgcolor="#EBEBEB">';
 				}				 
-	 			$html .= output_custom_fields($final_output, $_GET['type'], $location, $local, $type);				
-				$html .= '</tr>';
+	 			$html .= output_custom_fields($final_output, $_GET['type'], $location, $local, $type);
+		 		$html .= '</tr>';
 	 			$backgroundindex++;
-			}	
+			}	 
 			$html .= '</tbody> </table></div><br><br>'; 			
  		}else{
 			$html .= 'No results found!'; 
@@ -287,37 +438,49 @@ function output_qsummary_rows($local,$listby,$type){
 		return $html;
 }
 
-$sql = "select lab from labs";
+$sql = "select * from labs";
 $outer_Recordset = mysql_query($sql, $local) or die(mysql_error()); 	 
 while($lab_object =  mysql_fetch_assoc($outer_Recordset)){	
-	$query_Recordset = "select * from users where lab like '" . $lab_object['lab'] . "'";
-	$Recordset = mysql_query($query_Recordset, $local) or die(mysql_error()); 	
+	$query_Recordset = "select * from users,labs where users.lab = labs.lab_ID and lab_ID like '" . $lab_object['lab_ID'] . "'";
+ 	$Recordset = mysql_query($query_Recordset, $local) or die(mysql_error()); 	
 	$html = "Monthly Quantity Report " . date("m/d/y",time());
-	while($temp_object =  mysql_fetch_assoc($Recordset)){	
-		$_GET['type'] = "q_summary";
-		$_GET['listby'] = $temp_object['name'];
-		$html .= "<br><hr><strong>Batches by User</strong>: " . $temp_object['name'];
-		$html .= "<br><br>";
-		$html .= output_qsummary_rows($local,$_GET['listby'],'user');		
-		$html .= output_qsummary_rows($local,$_GET['listby'],'mutant');
-		$html .= output_qsummary_rows($local,$_GET['listby'],'strain');
-		$html .= output_qsummary_rows($local,$_GET['listby'],'transgene');
-		$html .= "<br><br>";
+	while($temp_object =  mysql_fetch_assoc($Recordset)){
+		if ($temp_object['last_name'] != ""){	
+			$_GET['type'] = "q_summary";
+			$user = $temp_object['user_ID'];
+			$html .= "<br><hr><strong>Batches by User</strong>: " . $temp_object['last_name'] . ' (' .  $temp_object['username'] . ')';
+			$html .= "<br><br>";
+			$html .= output_monthly_death_rate($local,$user);
+			$html .= "<br><br>"; 
+			$html .= output_qsummary_rows($local,$user,'user',$temp_object['last_name']);
+			$html .= output_qsummary_rows($local,$user,'wildtype',$temp_object['last_name']);		
+			$html .= output_qsummary_rows($local,$user,'mutant',$temp_object['last_name']);
+			//$html .= output_qsummary_rows($local,$user,'strain',$temp_object['last_name']);
+			$html .= output_qsummary_rows($local,$user,'transgene',$temp_object['last_name']);
+			$html .= "<br><br>";
+		}
 	} 
+	
 	$_GET['type'] = "q_summary";
-	$_GET['listby'] = $lab_object['lab'] . "_lab";
-	$html .= output_qsummary_rows($local,$_GET['listby'],'user');		
-	$html .= output_qsummary_rows($local,$_GET['listby'],'mutant');
-	$html .= output_qsummary_rows($local,$_GET['listby'],'strain');
-	$html .= output_qsummary_rows($local,$_GET['listby'],'transgene');	 
-	create_attatchment($local,$html,$lab_object['lab']);
+	$lab = $lab_object['lab_ID'] . "_lab";
+	$html .= '<strong>' . $lab_object['lab_name'] . ' Lab Quantities</strong><br>';
+	$html .= '<hr>';
+	$html .= "<br><br>";
+	$html .= output_monthly_death_rate($local,$lab);
+	$html .= "<br><br>";
+	$html .= output_qsummary_rows($local,$lab,'user',$lab_object['lab_name'] . ' Lab');		
+	$html .= output_qsummary_rows($local,$lab,'mutant',$lab_object['lab_name'] . ' Lab');
+	//$html .= output_qsummary_rows($local,$lab,'strain',$lab_object['lab_name']);
+	$html .= output_qsummary_rows($local,$lab,'transgene',$lab_object['lab_name'] . ' Lab');	  
+	
+	create_attatchment($local,$html,$lab_object['lab_name']);
 }	
-	$sql = "select * from report_recipients RP join users USR on (USR.user_ID = RP.user_ID) ";
+	$sql = "select * from report_recipients RP join users USR on (USR.user_ID = RP.user_ID)  join labs LBS on (USR.lab = LBS.lab_ID)";
 	$Recordset = mysql_query($sql, $local) or die(mysql_error()); 	 
 	while($lab_object =  mysql_fetch_assoc($Recordset)){  
 		$fileatt = getcwd() . "/scheduled_reports/tmp/"; // Path to the file
 		$fileatt_type = "application/octet-stream"; // File Type
-		$fileatt_name = $lab_object['lab'] . "_Monthly_Report.doc"; // Filename that will be used for the file as the attachment 
+		$fileatt_name = $lab_object['lab_name'] . "_Monthly_Report.doc"; // Filename that will be used for the file as the attachment 
 		$email_from = $admin_email; // Who the email is from
 		$email_subject =  "Monthly Zebra Database Quantity Report";
 		$email_txt = "Monthly Quantity Report " . date("m/d/y",time());
@@ -342,7 +505,8 @@ while($lab_object =  mysql_fetch_assoc($outer_Recordset)){
 		"Content-Transfer-Encoding: base64\n\n" .
 		$data . "\n\n" .
 		"--{$mime_boundary}--\n";  
-		$email_to = $lab_object['email']; // Who the email is too		 
+		$email_to = $lab_object['email']; // Who the email is too
+	 		 
 		$ok = @mail($email_to, $email_subject, $email_message, $headers);  
 	}
 	echo 'Email messages were sent successfully!';
