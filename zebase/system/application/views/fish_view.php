@@ -14,7 +14,14 @@ libraries($url);
 $(function() {
 	$("#vtabs").tabs().addClass('ui-tabs-vertical ui-helper-clearfix');
 	$("#vtabs li").removeClass('ui-corner-top').addClass('ui-corner-left'); 
+	$("#wq_vtabs").tabs().addClass('ui-tabs-vertical ui-helper-clearfix');
+	$("#wq_vtabs li").removeClass('ui-corner-top').addClass('ui-corner-left'); 
 }); 
+
+var icons = {
+	header: "ui-icon-circle-arrow-e",
+	headerSelected: "ui-icon-circle-arrow-s"
+};
 $(function() { 
 	$( "#admin_acc" ).accordion({ active: <?php
 	if ($url_var_5 && is_numeric($url_var_5)){
@@ -22,8 +29,15 @@ $(function() {
 	}else{
 		echo 0;
 	}
-	?>});
-}); 
+	?>,
+	icons: icons, 
+	collapsible: true});
+});
+$( "#toggle" ).button().toggle(function() {
+	$( "#admin_acc" ).accordion( "option", "icons", false );
+}, function() {
+	$( "#admin_acc" ).accordion( "option", "icons", icons );
+});  
 
 $(function() {  
 	$("#tabs").tabs({selected:2});   
@@ -86,13 +100,14 @@ function open_qsummary(report_var){
    <div style=" float:right; margin-right:20px;"><?php echo anchor('fish/logout', 'Logout', 'style="font-size: 1.2em; font-weight:800 "'); ?></div>
   <div class="content"  >
  <div id="tabs" style="margin-left:10px; margin-top:20px; margin-right:10px;"><table><tr><td>
-           <ul>
+           <ul style="width:800px;">
            <li><a href="#tabs-3">Quick Stats</a></li>
            <li><a href="#tabs-0">My Lab Fish</a></li>
            <li><a href="#tabs-1">Search</a></li>  
-            <li><a href="#tabs-4">Settings</a></li>
-             <li><a href="#tabs-5">Scheduled Reports</a></li>
-             </ul>
+           <li><a href="#tabs-4">Settings</a></li>
+           <li><a href="#tabs-5">Scheduled Reports</a></li>
+           <li><a href="#tabs-6">Water Quality</a></li>
+           </ul>
              </td><td><div style="position:absolute;"><input type="hidden" name="batch_number" id="batch_num" ></div>
              </td><td><div style="padding-left:380px;"> </div></td></tr></table>
             <div id="tabs-3" > 
@@ -102,55 +117,54 @@ function open_qsummary(report_var){
                             <li><a href="#tabs-b">Track Survival</a></li>
                             <li><a href="#tabs-c">Current Survival</a></li>
                         </ul>
-                        <div id="tabs-a">
-                            <h3 style="padding: 0px; padding-left: 20px;" >Overall Stats</h3>
+                        <div id="tabs-a"> 
                                         <table cellpadding="10" ><tr><td>
-                                        <div id="plain_box">
-                                         <h2>Current Fish Count</h2>                           	 
+                                        <div id="standard_box">
+                                         <h2>Current Fish Count</h2><div style="padding-left:15px;">                           	 
                                           <?php 
                                           $count = "";
                                           foreach ($current_count as $lab){?>
                                               <?php foreach ($lab->result() as $row):?>
-                                               <?=$row->lab?>:&nbsp;&nbsp;<?=$row->fish_count?> <br />                                
+                                               <?=$row->lab_name?>:&nbsp;&nbsp;<?=$row->fish_count?> <br />                                
                                               <?php 
                                               $count += $row->fish_count;
                                               endforeach; ?>	
                                           <?php } ?><br /> 
                                            All Labs:&nbsp;&nbsp;<?=$count?> 
-                                          </div>
+                                          </div></div>
                                            </td><td >
-                                           <div id="plain_box">
-                                           <h2>Current Nursery Count</h2>
+                                           <div id="standard_box">
+                                           <h2>Current Nursery Count</h2><div style="padding-left:15px;">
                                           <?php  
                                            $count = "";
                                           foreach ($nurseryq_count as $lab){?>
                                               <?php foreach ($lab->result() as $row):?>
-                                               <?=$row->lab?>:&nbsp;&nbsp;<?=$row->fish_count?> <br />                                  
+                                               <?=$row->lab_name?>:&nbsp;&nbsp;<?=$row->fish_count?> <br />                                  
                                               <?php 
                                               $count += $row->fish_count;
                                               endforeach; ?>	
                                           <?php } ?><br /> 
                                             All Labs:&nbsp;&nbsp;<?=$count?>	 
-                                           </div>   
+                                           </div></div>   
                                           </td></tr></table> 
                          </div><!--tabs-a-->  
-                        <div id="tabs-b" > <div style="width:1050px"> 
-                             <h3 style="padding-left: 20px;"  >Track Survival Percentage <?php echo  date('F Y',time()); ?></h3>  
-		                      <?php
-							track_percentage($track_percentage,$url,$datefilter,$admin_access);
+                        <div id="tabs-b" > <div style="width:900px"> 
+                             <h2 style="padding-left: 20px;"  >Track Survival Percentage <?php echo  date('F Y',time()); ?></h2>  
+		                      <?php 
+							track_percentage($track_percentage,$url,$datefilter,$admin_access,$search_options_track);
 							?></div> 
                             </div><!--tabs-b--> 
                              <div id="tabs-c">  
-                             <h3 style="padding-left: 20px;"  >Current Survival</h3> 
-        				   <?php
-							 track_current($current_survival,$url,$admin_access);
+                             <h2 style="padding-left: 20px;"  >Current Survival</h2> 
+        				   <?php 
+							 track_current($current_survival,$url,$admin_access,$search_options_survival);
 							?> 
                             </div><!--tabs-c--></div><!--vtab-->
         
             </div>  
            <div id="tabs-0" >  
-			 <?php
-			 show_lab_fish($url,$all_lab_fish,$loggedin_user,$admin_access);			 
+			 <?php 
+			 show_lab_fish($url,$all_lab_fish,$loggedin_user,$admin_access,$search_options);			 
 			 ?>
            </div> <!--tab-0-->
              <div  id="tabs-1" >
@@ -159,19 +173,19 @@ function open_qsummary(report_var){
 				$attributes = array('id' => 'quantity_sum_form_id','name' => 'quantity_sum_form');
 				$quantity .= form_open('', $attributes);	 
 				$quantity .='
-				<table><tr><td  >
+				<table><tr><td  >&nbsp;&nbsp;&nbsp;&nbsp;
 				<a href="#"  onclick="open_qsummary(\'my\');" class="jq_buttons">My Quantities</a> 
-				</td></tr><tr><td  ><br>
+				</td></tr><tr><td  ><br>&nbsp;&nbsp;&nbsp;&nbsp;
 				<a href="#"  onclick="open_qsummary(\'mylab\');" class="jq_buttons" >My Lab Quantities</a>
 			 	</td></tr><tr><td valign="top">
-				<h3>Select a Lab:</h3><select name="lab" id="quantity_lab_select"><option></option>';
+				<h3>Select a Lab:</h3>&nbsp;&nbsp;&nbsp;&nbsp;<select name="lab" id="quantity_lab_select"><option></option>';
 				foreach ($all_labs->result() as $row){ 
-					$quantity .=' <option>' . $row->lab . '</option>';
+					$quantity .=' <option value="' . $row->lab_ID . '">' . $row->lab_name . '</option>';
 				}		
 				$quantity .=' </select> <a href="#"  onclick="open_qsummary(\'entire_lab\');" class="jq_buttons">Go</a>
 				</form>
 				</td></tr><tr><td>
-				<h3>Select a User:</h3><select name="user" id="quantity_user_select"   ><option></option>';
+				<h3>Select a User:</h3>&nbsp;&nbsp;&nbsp;&nbsp;<select name="user" id="quantity_user_select"   ><option></option>';
 				foreach ($all_users->result() as $row){
 					$quantity .=' <option value="' . $row->user_ID . '">' . $row->username . '</option>';
 				}	
@@ -183,19 +197,19 @@ function open_qsummary(report_var){
 				$batch_sum .=' ';
 				$attributes = array('id' => 'batch_sum_form_id','name' => 'batch_sum_form');
 				$batch_sum .= form_open('', $attributes); 
-				$batch_sum .= '<table><tr><td  >  
+				$batch_sum .= '<table><tr><td  >  &nbsp;&nbsp;&nbsp;&nbsp;
 				<a href="#"  onclick="open_summary(\'my\');" class="jq_buttons">My Batches</a>&nbsp;&nbsp;&nbsp;&nbsp;
-				</td></tr><tr><td  ><br>
+				</td></tr><tr><td  ><br>&nbsp;&nbsp;&nbsp;&nbsp;
 				<a href="#"   onclick="open_summary(\'mylab\');" class="jq_buttons">My Lab Batches</a>
 		 		</td></tr><tr><td valign="top">
-				<h3>Select a Lab:</h3><select name="lab" id="batch_lab_select"   ><option></option>';
+				<h3>Select a Lab:</h3>&nbsp;&nbsp;&nbsp;&nbsp;<select name="lab" id="batch_lab_select"   ><option></option>';
 				foreach ($all_labs->result() as $row){
-					$batch_sum .= '<option>' . $row->lab . '</option>';
+					$batch_sum .= '<option value="' . $row->lab_ID . '">' . $row->lab_name . '</option>';
 				}	
 				$batch_sum .= '</select> <a href="#"  onclick="open_summary(\'entire_lab\');" class="jq_buttons">Go</a>
 				</form>
 				</td></tr><tr><td>
-				<h3>Select a User:</h3><select name="user" id="batch_user_select"><option></option>';
+				<h3>Select a User:</h3>&nbsp;&nbsp;&nbsp;&nbsp;<select name="user" id="batch_user_select"><option></option>';
 				foreach ($all_users->result() as $row){
 					$batch_sum .= '<option value="' . $row->user_ID . '">' . $row->username . '</option>';
 				}	
@@ -203,7 +217,7 @@ function open_qsummary(report_var){
 				<br /><br />  
 				</td></tr></table> 
 				</div></form>';
-				search_function($all_fish,$all_users,$all_mutants,$all_strains,$all_transgenes,$quantity,$batch_sum,$url,$all_labs,$all_tanks,$all_searches,$all_mutant_allele,$all_transgene_allele);
+				search_function($all_users,$all_mutants,$all_strains,$all_transgenes,$quantity,$batch_sum,$url,$all_labs,$all_tanks,$all_searches,$all_mutant_allele,$all_transgene_allele);
 				 ?>
             </div>  
               <div id="tabs-5" > 
@@ -222,13 +236,8 @@ function open_qsummary(report_var){
                                  </div> 
                                  <h3><a href="#">Tanks</a></h3> 
                                  <div id="tab_admin-4"><div style="height:500px; width:800px;">  
-                                 <?php
-								 	 /*if ($_SESSION['show_tanks'] == true){ 
-									     echo anchor('fish/index/hidet', 'Hide(-)', 'title="Hide Tanks"');*/
-	                                     output_tanks($url,$all_tanks);
-									/* }else{ 
-										 echo anchor('fish/index/showt', 'Show(+)', 'title="Show Tanks"');
-									 }*/
+                                 <?php 
+	                                output_tanks($url,$all_tanks);									 
                                  ?>
                                  </div>  </div> 
                                  <h3><a href="#">Other Attributes</a></h3> 
@@ -269,8 +278,100 @@ function open_qsummary(report_var){
                                  </td></tr></table>
                                   </div></div> 
                           <?php }?> 
-                        </div><!--admin_acc-->   
-              
+                        </div><!--admin_acc-->
+             </div><!--tabs-4-->    
+            <div id="tabs-6" > 
+           		 <div id="wq_vtabs" style="width:1000px"> 
+                        <ul >
+                            <li><a href="#wq_vtabs-a">Water Quality</a></li>
+                            <li><a href="#wq_vtabs-b">Nitrate</a></li>
+                            <li><a href="#wq_vtabs-c">Nitrite</a></li>
+                            <li><a href="#wq_vtabs-d">pH</a></li>
+                            <li><a href="#wq_vtabs-e">Conductivity</a></li>
+                            <li><a href="#wq_vtabs-f">D.O.</a></li>
+                            <li><a href="#wq_vtabs-g">Temperature</a></li>
+                        </ul>
+                        <div id="wq_vtabs-a">
+                        <?php
+							output_water_quality($url,$search_water_quality);
+						?>
+                        </div>
+                        <div id="wq_vtabs-b">
+                        	<table><tr><td>
+                        	<?php			
+							output_chart_ranges($url,'nitrate','nchart'); 
+							?><br />
+                            </td></tr>
+                            <tr><td>
+                            <?php	 
+							output_nitrate_chart($water_quality); 
+							?>
+                            </td></tr></table>
+                        </div>
+                        <div id="wq_vtabs-c">
+                      	    <table><tr><td>
+                        	<?php							
+							output_chart_ranges($url,'nitrite','nichart');
+							?>
+                            <br />
+                            </td></tr>
+                            <tr><td>
+                        	<?php 
+							output_nitrite_chart($water_quality); 
+							?>
+                            </td></tr></table>
+                        </div>
+                        <div id="wq_vtabs-d">
+                       		<table><tr><td>
+                        	<?php			
+							output_chart_ranges($url,'ph','phchart'); 
+							?><br />
+                            </td></tr>
+                            <tr><td>
+							<?php
+                            output_ph_chart($water_quality);
+                            ?>
+                        </td></tr></table>
+                        </div>
+                        <div id="wq_vtabs-e">
+                         	<table><tr><td>
+                        	<?php			
+							output_chart_ranges($url,'conductivity','cchart'); 
+							?><br />
+                            </td></tr>
+                            <tr><td>
+							<?php
+                            output_conductivity_chart($water_quality);
+                            ?>
+                            </td></tr></table>
+                        </div>
+                        <div id="wq_vtabs-f">
+                            <table><tr><td>
+                            <?php			
+                            output_chart_ranges($url,'do','dhart'); 
+                            ?><br />
+                            </td></tr>
+                            <tr><td>
+                            <?php
+                            output_do_chart($water_quality);
+                            ?>
+                            </td></tr></table>
+                        </div>
+                        <div id="wq_vtabs-g">
+                         <table><tr><td>
+                            <?php			
+                            output_chart_ranges($url,'temperature','thart'); 
+                            ?><br />
+                            </td></tr>
+                            <tr><td>
+							<?php
+                            output_temperature_chart($water_quality);
+                            ?>
+                            </td></tr></table>
+                        </div>
+                   </div>
+				
+            </div><!--tabs-6-->    
            </div> <!--tabs-->  
    
 <script language="javascript">
@@ -299,7 +400,9 @@ if ($_SESSION['scanning'] == "enabled"){
 	});";
 }else{
 	echo 'document.getElementById("scan_mode").style.visibility = "hidden";';	
-}?>
+}
+
+?>
 
 </script> 
     <!-- end .content --></div></div>
