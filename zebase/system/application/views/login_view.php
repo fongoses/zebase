@@ -70,12 +70,12 @@ function sub_data(){
  
   <!-- end .header --></div>
   <div style="height:180px"></div>
-  <div class="content">
+  <h1 style="font-size:4.5em; font-family:veranda;margin:0px; margin-left:150px;">Login</h1> 
+  <div class="content" style="width:600px;margin-left:190px;">
 <?php
 	$attributes = array('id' => 'login_form_ID','name' => 'login_form');
 	echo form_open('fish/send_login', $attributes); 
-?>
-<h1 style="font-size:4.5em">Login</h1> 
+?> 
 <div style="width: 500px; height:300px; margin-left:30%; text-align: left"> <div style="padding-top:50px;">
           
                  <?php
